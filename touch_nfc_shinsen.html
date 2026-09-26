@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ガチャTouch！ - 神泉</title>
+    
+    <style>
+        :root {
+            --bg-color: #FFF5F8;
+            --pink-primary: #FF6584;
+            --pink-soft: #FFE5EC;
+            --pink-bubble: #FF6584;
+            --mint-primary: #38D39F;
+            --mint-soft: #E8FCDD;
+            --yellow-soft: #FFF9E6;
+            --purple-soft: #F3EFFF;
+            --purple-primary: #9C88FF;
+            --text-main: #332C42;
+            --text-sub: #7A6F8A;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-size: 16px;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh; /* スマホでアドレスバー表示時の高さズレ対策 */
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        header {
+            background: linear-gradient(135deg, #FF6584, #FF8EA3);
+            color: white;
+            padding: 10px 16px;
+            padding-top: calc(10px + env(safe-area-inset-top, 0px));
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(255, 101, 132, 0.25);
+            z-index: 10;
+        }
+
+        .header-top {
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-badge {
+            background-color: #FFD166;
+            color: #332C42;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* ユーザーネーム表示バッジ（変更・シャッフル可能） */
+        .user-nickname-bar {
+            background-color: rgba(255, 255, 255, 0.22);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .user-nickname-bar:active {
+            background-color: rgba(255, 255, 255, 0.35);
+        }
+
+        .tab-nav {
+            max-width: 480px;
+            margin: 10px auto 0 auto;
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.3);
+            padding: 4px;
+            border-radius: 18px;
+            backdrop-filter: blur(5px);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            background: none;
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-btn.active {
+            background-color: white;
+            color: var(--pink-primary);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-body {
+            max-width: 480px;
+            width: 100%;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tab-content {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .info-container {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .nfc-banner {
+            background: linear-gradient(135deg, #E8FCDD, #C3F2DC);
+            border: 2px dashed var(--mint-primary);
+            padding: 14px 16px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #1B5E43;
+            font-weight: bold;
+        }
+
+        .item-card {
+            background-color: white;
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 6px 20px rgba(255, 101, 132, 0.12);
+            border: 3px solid var(--pink-soft);
+        }
+
+        .item-tag {
+            display: inline-block;
+            background-color: var(--pink-soft);
+            color: var(--pink-primary);
+            font-weight: 900;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .item-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .item-subtitle {
+            font-size: 14px;
+            color: var(--text-sub);
+            font-weight: bold;
+            margin-bottom: 18px;
+        }
+
+        .bottle-spec-box {
+            background-color: var(--yellow-soft);
+            border-radius: 18px;
+            padding: 16px;
+            border: 2px solid #FFE79A;
+            margin-bottom: 18px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .spec-item {
+            background-color: white;
+            padding: 10px 4px;
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .spec-label {
+            font-size: 11px;
+            color: var(--text-sub);
+            font-weight: bold;
+            display: block;
+        }
+
+        .spec-value {
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .tag-badge {
+            background-color: var(--pink-soft);
+            color: var(--pink-primary);
+            font-size: 13px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 14px;
+        }
+
+        .item-desc {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 22px;
+            color: #4A4356;
+            font-weight: 500;
+        }
+
+        .btn-buy {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #FF6584, #FF476E);
+            color: white;
+            text-decoration: none;
+            font-size: 17px;
+            font-weight: 900;
+            padding: 18px;
+            border-radius: 20px;
+            box-shadow: 0 6px 16px rgba(255, 101, 132, 0.35);
+            transition: transform 0.1s;
+        }
+
+        .btn-buy:active {
+            transform: scale(0.97);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #F7EFF2;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .chat-date-divider {
+            text-align: center;
+            margin: 6px 0;
+        }
+
+        .chat-date-text {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-sub);
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 14px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        /* 吹き出し共通デザイン */
+        .message-row {
+            display: flex;
+            gap: 10px;
+            max-width: 88%;
+        }
+
+        /* 他人のメッセージ（左側） */
+        .message-row.other {
+            align-self: flex-start;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+            border: 2px solid white;
+        }
+
+        .message-content {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .sender-name {
+            font-size: 12px;
+            color: var(--text-sub);
+            font-weight: 800;
+            margin-left: 2px;
+        }
+
+        .bubble-group {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.45;
+            word-break: break-word;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            font-weight: 500;
+        }
+
+        .message-row.other .bubble {
+            background-color: white;
+            color: var(--text-main);
+            border-top-left-radius: 4px;
+        }
+
+        .msg-time {
+            font-size: 11px;
+            color: #A095B0;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* 自分のメッセージ（右側） */
+        .message-row.me {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-row.me .sender-name {
+            text-align: right;
+            margin-right: 2px;
+            margin-left: 0;
+        }
+
+        .message-row.me .bubble-group {
+            flex-direction: row-reverse;
+        }
+
+        .message-row.me .bubble {
+            background-color: var(--pink-primary);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        /* 入力エリア */
+        .chat-input-area {
+            background-color: white;
+            padding: 12px 14px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            border-top: 1px solid #EAE0E4;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.03);
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 2px solid #E5D9DD;
+            border-radius: 22px;
+            padding: 12px 16px;
+            font-size: 16px;
+            outline: none;
+            background-color: var(--bg-color);
+            transition: border-color 0.2s;
+            font-weight: 600;
+        }
+
+        .chat-input:focus {
+            border-color: var(--pink-primary);
+            background-color: white;
+        }
+
+        .btn-send {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background-color: var(--pink-primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(255, 101, 132, 0.35);
+            flex-shrink: 0;
+            transition: transform 0.1s;
+        }
+
+        .btn-send:active {
+            transform: scale(0.92);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(51, 44, 66, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background-color: white;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 3px solid var(--pink-soft);
+            text-align: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+
+        .modal-input {
+            width: 100%;
+            border: 2px solid #E5D9DD;
+            border-radius: 16px;
+            padding: 12px 14px;
+            font-size: 16px;
+            font-weight: bold;
+            outline: none;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .modal-input:focus {
+            border-color: var(--pink-primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-modal {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 16px;
+            border: none;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-modal-cancel {
+            background-color: #EEE8EC;
+            color: var(--text-sub);
+        }
+
+        .btn-modal-save {
+            background-color: var(--pink-primary);
+            color: white;
+        }
+
+        .btn-modal-shuffle {
+            background-color: var(--mint-soft);
+            color: #1B5E43;
+            border: 1px solid var(--mint-primary);
+            margin-bottom: 12px;
+            width: 100%;
+        }
+
+        /* SVG ICONS */
+        .svg-icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <div class="logo">
+                <span>ガチャTouch！</span>
+                <span class="logo-badge">NFC</span>
+            </div>
+
+            <!-- 自動割り当てされるニックネーム（タップで変更可能） -->
+            <div class="user-nickname-bar" onclick="openNameModal()" title="タップで名前を変更">
+                <span>👤</span>
+                <span id="header-nickname">設定中...</span>
+                <span style="font-size: 10px; opacity: 0.8;">✏️</span>
+            </div>
+        </div>
+
+        <!-- タブナビゲーション -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('info')">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <span>🍶 銘柄情報</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('chat')">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                <span>💬 みんなの感想</span>
+            </button>
+        </nav>
+    </header>
+
+    <div class="app-body">
+
+        <!-- TAB 1: 銘柄情報 -->
+        <div id="tab-info" class="tab-content active">
+            <div class="info-container">
+                <div class="nfc-banner">
+                    <span style="font-size: 22px;">📲</span>
+                    <span>NFC読み取り成功！<br>【神泉（しんせん）】を表示中♪</span>
+                </div>
+
+                <div class="item-card">
+                    <span class="item-tag">CAPSULE No.03 🍶</span>
+                    <div class="item-title">神泉</div>
+                    <div class="item-subtitle">純米吟醸 ブルーラベル / 東酒造 (石川県小松市)</div>
+
+                    <!-- 仕様スペックカード -->
+                    <div class="bottle-spec-box">
+                        <div style="font-size: 14px; font-weight: 900; text-align: center; color: var(--text-main);">
+                            ✨ 味わいガイド＆スペック
+                        </div>
+                        <div class="spec-grid">
+                            <div class="spec-item">
+                                <span class="spec-label">精米歩合</span>
+                                <span class="spec-value">60%</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">アルコール</span>
+                                <span class="spec-value">15度</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">味わい</span>
+                                <span class="spec-value">辛口</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tags-container">
+                        <span class="tag-badge">#山田錦100%</span>
+                        <span class="tag-badge">#芳醇辛口</span>
+                        <span class="tag-badge">#受賞歴多数</span>
+                        <span class="tag-badge">#格式高いボトル</span>
+                    </div>
+
+                    <p class="item-desc">
+                        1860年創業、石川県小松市の老舗蔵「東酒造」が誇る銘酒「神泉」！<br>
+                        最高峰の大吟醸は皇室や内閣総理大臣の外遊機内でも提供されたという格式ある一本です。白山の伏流水を使い、山田錦を丁寧に磨き上げた芳醇な辛口で、じっくりと味わいたい大人の日本酒ミニチュアです♪
+                    </p>
+
+                    <!-- 公式購入導線 -->
+                    <a href="https://www.sake-sinsen.co.jp/" target="_blank" rel="noopener noreferrer" class="btn-buy">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                        <span>本物の神泉（東酒造）をチェック！</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: LINE風みんなの感想チャット -->
+        <div id="tab-chat" class="tab-content">
+            <div class="chat-container">
+                <!-- メッセージ表示エリア -->
+                <div id="chat-messages" class="chat-messages">
+                    <div class="chat-date-divider">
+                        <span class="chat-date-text">ガチャTouch！トークルーム</span>
+                    </div>
+                    <!-- JSで吹き出しが動的に入ります -->
+                </div>
+
+                <!-- チャット入力エリア (下部固定) -->
+                <form id="chat-form" class="chat-input-area" onsubmit="handleSend(event)">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="感想や当たった報告を投稿..." required autocomplete="off">
+                    <button type="submit" class="btn-send">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="name-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-title">ニックネームの設定 🌸</div>
+            <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 16px; font-weight: bold;">
+                みんなに表示されるお名前です
+            </p>
+            <button type="button" class="btn-modal btn-modal-shuffle" onclick="shuffleName()">
+                🎲 ランダムでシャッフルする
+            </button>
+            <input type="text" id="modal-name-input" class="modal-input" maxlength="12" placeholder="ニックネームを入力">
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-modal-cancel" onclick="closeNameModal()">キャンセル</button>
+                <button type="button" class="btn-modal btn-modal-save" onclick="saveNameFromModal()">決定する</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 自動割り当て用ニックネーム候補リスト
+        const AUTO_NICKNAMES = [
+            "ぽん酒女子🌸", "ガチャマニアみさき✨", "フルーティー派ゆい🍶",
+            "推し酒あやか🎀", "ほろよいさくら🌸", "ミニチュア好きもも🍑",
+            "神泉ファンりんご🍎", "ガチャ神引きちゃん✨", "お酒初心者あおい🌿"
+        ];
+
+        // 初期表示用チャット（他ユーザーのメッセージ例）
+        const DEFAULT_CHAT = [
+            {
+                id: 1,
+                isMe: false,
+                name: "もも🍑",
+                avatarBg: "#FFD2E0",
+                avatarSvg: `<circle cx="12" cy="8" r="4" fill="#FF6584"/><path d="M12 14c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" fill="#FF6584"/>`,
+                text: "説明書のNFCかざしたらここに来れた〜！神泉当たってテンション上がった！✨",
+                time: "18:20"
+            },
+            {
+                id: 2,
+                isMe: false,
+                name: "辛口党ゆい🍶",
+                avatarBg: "#E8FCDD",
+                avatarSvg: `<circle cx="12" cy="8" r="4" fill="#38D39F"/><path d="M12 14c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" fill="#38D39F"/>`,
+                text: "神泉って皇室にも献上された格式あるお酒なんですよ〜！ラベルも上品✨",
+                time: "18:22"
+            },
+            {
+                id: 3,
+                isMe: false,
+                name: "りんご🍎",
+                avatarBg: "#F3EFFF",
+                avatarSvg: `<circle cx="12" cy="8" r="4" fill="#9C88FF"/><path d="M12 14c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" fill="#9C88FF"/>`,
+                text: "本物のお酒も買ってみようかな！リンクから飛べるの分かりやすくて助かる🍶",
+                time: "18:25"
+            }
+        ];
+
+        // 擬似自動返信用のテンプレート
+        const AUTO_REPLIES = [
+            { name: "かなほ✨", text: "投稿ありがとうございます！神泉めちゃくちゃ美味しいですよね🍶💕", bg: "#FFEAA7", stroke: "#E17055" },
+            { name: "さくら🌸", text: "わかります〜！格式高い蔵のお酒って感じで特別感ありますよね！", bg: "#FFD2E0", stroke: "#FF6584" },
+            { name: "あおい🌿", text: "神泉ファン増えて嬉しい！一緒に乾杯したいですね🥂", bg: "#E8FCDD", stroke: "#38D39F" }
+        ];
+
+        const STORAGE_KEY_CHAT = 'gacha_touch_chat_shinsen_v1';
+        const STORAGE_KEY_NAME = 'gacha_touch_user_nickname';
+
+        let currentNickname = "";
+
+        // ページ読み込み時
+        document.addEventListener('DOMContentLoaded', () => {
+            initNickname();
+            loadMessages();
+        });
+
+        // ニックネーム初期化（LocalStorageになければ自動割り当て）
+        function initNickname() {
+            const savedName = localStorage.getItem(STORAGE_KEY_NAME);
+            if (savedName) {
+                currentNickname = savedName;
+            } else {
+                currentNickname = getRandomNickname();
+                localStorage.setItem(STORAGE_KEY_NAME, currentNickname);
+            }
+            updateHeaderNickname();
+        }
+
+        function getRandomNickname() {
+            return AUTO_NICKNAMES[Math.floor(Math.random() * AUTO_NICKNAMES.length)];
+        }
+
+        function updateHeaderNickname() {
+            document.getElementById('header-nickname').textContent = currentNickname;
+        }
+
+        // モーダル処理
+        function openNameModal() {
+            document.getElementById('modal-name-input').value = currentNickname;
+            document.getElementById('name-modal').classList.add('active');
+        }
+
+        function closeNameModal() {
+            document.getElementById('name-modal').classList.remove('active');
+        }
+
+        function shuffleName() {
+            const newName = getRandomNickname();
+            document.getElementById('modal-name-input').value = newName;
+        }
+
+        function saveNameFromModal() {
+            const inputVal = document.getElementById('modal-name-input').value.trim();
+            if (inputVal) {
+                currentNickname = inputVal;
+                localStorage.setItem(STORAGE_KEY_NAME, currentNickname);
+                updateHeaderNickname();
+                closeNameModal();
+            }
+        }
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            if (tabName === 'info') {
+                tabs[0].classList.add('active');
+                document.getElementById('tab-info').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('tab-chat').classList.add('active');
+                scrollToBottom();
+            }
+        }
+
+        // メッセージ読み込みと表示
+        function loadMessages() {
+            let messages = [];
+            const saved = localStorage.getItem(STORAGE_KEY_CHAT);
+
+            if (saved) {
+                try {
+                    messages = JSON.parse(saved);
+                } catch (e) {
+                    messages = DEFAULT_CHAT;
+                }
+            } else {
+                messages = DEFAULT_CHAT;
+                localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(messages));
+            }
+
+            renderChat(messages);
+        }
+
+        // チャット画面描画
+        function renderChat(messages) {
+            const container = document.getElementById('chat-messages');
+            
+            const existingRows = container.querySelectorAll('.message-row');
+            existingRows.forEach(row => row.remove());
+
+            messages.forEach(msg => {
+                const row = document.createElement('div');
+                row.className = `message-row ${msg.isMe ? 'me' : 'other'}`;
+
+                if (msg.isMe) {
+                    row.innerHTML = `
+                        <div class="message-content">
+                            <span class="sender-name">${escapeHTML(msg.name || currentNickname)}</span>
+                            <div class="bubble-group">
+                                <div class="bubble">${escapeHTML(msg.text)}</div>
+                                <span class="msg-time">${msg.time}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <div class="avatar" style="background-color: ${msg.avatarBg || '#FFF'};">
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 30px; height: 30px;">
+                                ${msg.avatarSvg}
+                            </svg>
+                        </div>
+                        <div class="message-content">
+                            <span class="sender-name">${escapeHTML(msg.name)}</span>
+                            <div class="bubble-group">
+                                <div class="bubble">${escapeHTML(msg.text)}</div>
+                                <span class="msg-time">${msg.time}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.appendChild(row);
+            });
+
+            scrollToBottom();
+        }
+
+        // 送信処理
+        function handleSend(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const newMsg = {
+                id: Date.now(),
+                isMe: true,
+                name: currentNickname,
+                text: text,
+                time: timeStr
+            };
+
+            let messages = getStoredMessages();
+            messages.push(newMsg);
+            saveMessages(messages);
+            renderChat(messages);
+
+            input.value = '';
+
+            // 擬似自動返信（1.8秒後）
+            setTimeout(() => {
+                triggerAutoReply();
+            }, 1800);
+        }
+
+        // 自動返信アクション
+        function triggerAutoReply() {
+            const replyTemplate = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const replyMsg = {
+                id: Date.now(),
+                isMe: false,
+                name: replyTemplate.name,
+                avatarBg: replyTemplate.bg,
+                avatarSvg: `<circle cx="12" cy="8" r="4" fill="${replyTemplate.stroke}"/><path d="M12 14c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z" fill="${replyTemplate.stroke}"/>`,
+                text: replyTemplate.text,
+                time: timeStr
+            };
+
+            let messages = getStoredMessages();
+            messages.push(replyMsg);
+            saveMessages(messages);
+            renderChat(messages);
+        }
+
+        function getStoredMessages() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY_CHAT)) || DEFAULT_CHAT;
+            } catch (e) {
+                return DEFAULT_CHAT;
+            }
+        }
+
+        function saveMessages(messages) {
+            localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(messages));
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chat-messages');
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
